@@ -1,6 +1,8 @@
 ATLAS_IMAGE := interleaf-atlas-pgvector:pg17
+INPUT_FILE := testdata/input.pdf
+OUTPUT_FILE := out/output.json
 
-.PHONY: atlas-install atlas-diff atlas-apply atlas-image atlas-rebuild
+.PHONY: atlas-install atlas-diff atlas-apply atlas-image atlas-rebuild build run
 
 atlas-rebuild:
 	docker build -t $(ATLAS_IMAGE) ./docker/atlas
@@ -14,3 +16,12 @@ atlas-install:
 
 atlas-diff: atlas-image
 	@atlas migrate diff --env gorm $(NAME)
+
+build:
+	@go build -o bin/ileaf ./cmd/ileaf
+
+run: build
+	@./bin/ileaf ${INPUT_FILE} ${OUTPUT_FILE}
+ifdef SHOW
+	@cat ${OUTPUT_FILE} | jq
+endif
