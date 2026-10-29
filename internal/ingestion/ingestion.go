@@ -4,58 +4,69 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
-	"slices"
+	"mime"
+
+	"github.com/gabriel-vasile/mimetype"
 )
 
 type Ingestion struct {
-	extractors []extractor
-	config     Config
+	extractors map[string]PageExtractor
 }
 
 func NewIngestion() *Ingestion {
-	return &Ingestion{}
+	return &Ingestion{
+		extractors: make(map[string]PageExtractor),
+	}
 }
 
 func (ig *Ingestion) RegisterExtractor(
 	pe PageExtractor,
 	contentType string,
-	otherContentType ...string,
+	contentTypes ...string,
 ) {
-	ig.extractors = append(ig.extractors, extractor{
-		pe:           pe,
-		contentTypes: append(otherContentType, contentType),
-	})
+	ig.extractors[contentType] = pe
+
+	for _, contentType := range contentTypes {
+		ig.extractors[contentType] = pe
+	}
 }
 
-func (ig *Ingestion) Extract(file io.ReaderAt, size int64) ([]Page, error) {
-	mime, err := ig.detectMIMEType(file)
+func (ig *Ingestion) Extract(
+	ctx context.Context,
+	file io.ReaderAt,
+	size int64,
+) ([]Page, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	contentType, err := detectMIMEType(file, size)
 	if err != nil {
 		return nil, err
 	}
 
-	var pe PageExtractor
-	for _, ex := range ig.extractors {
-		if slices.Contains(ex.contentTypes, mime) {
-			pe = ex.pe
-			break
-		}
+	extractor, ok := ig.extractors[contentType]
+	if !ok {
+		return nil, fmt.Errorf("ingestion: unsupported MIME type: %s", contentType)
 	}
 
-	if pe == nil {
-		return nil, fmt.Errorf("ingestion: no extractor for mime: %s", mime)
-	}
-
-	return pe.Extract(context.TODO(), file, size)
+	return extractor.Extract(ctx, file, size)
 }
 
-func (ig *Ingestion) detectMIMEType(r io.ReaderAt) (string, error) {
-	var buf [512]byte
+func detectMIMEType(file io.ReaderAt, size int64) (string, error) {
+	const limit int64 = 1024 * 1024
 
-	n, err := r.ReadAt(buf[:], 0)
-	if err != nil && err != io.EOF {
+	data, err := io.ReadAll(io.NewSectionReader(file, 0, min(size, limit)))
+	if err != nil {
 		return "", err
 	}
 
-	return http.DetectContentType(buf[:n]), nil
+	contentType, _, err := mime.ParseMediaType(
+		mimetype.Detect(data).String(),
+	)
+	if err != nil {
+		return "", fmt.Errorf("ingestion: parse MIME type: %w", err)
+	}
+
+	return contentType, nil
 }

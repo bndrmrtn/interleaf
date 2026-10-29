@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/bndrmrtn/interleaf/internal/ingestion"
 	"github.com/ledongthuc/pdf"
@@ -12,13 +11,25 @@ import (
 	"github.com/tenebris-tech/x2md/pdf2md"
 )
 
+// PdfExtractor extracts text content from
+// a PDF file and tries to extract markdown too.
 type PdfExtractor struct{}
 
 func NewPdfExtractor() *PdfExtractor {
 	return &PdfExtractor{}
 }
 
+// Extract extracts a list of ingestion.Page from
+// a PDF document.
 func (p *PdfExtractor) Extract(
+	ctx context.Context,
+	file io.ReaderAt,
+	size int64,
+) ([]ingestion.Page, error) {
+	return p.extract(ctx, file, size)
+}
+
+func (p *PdfExtractor) extract(
 	ctx context.Context,
 	file io.ReaderAt,
 	size int64,
@@ -76,11 +87,4 @@ func (p *PdfExtractor) Extract(
 	}
 
 	return pages, nil
-}
-
-func cleanText(s string) string {
-	s = strings.ReplaceAll(s, "\x00", "")
-	s = strings.ReplaceAll(s, "\r\n", "\n")
-
-	return strings.TrimSpace(s)
 }

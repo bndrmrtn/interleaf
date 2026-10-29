@@ -1,9 +1,10 @@
 module github.com/bndrmrtn/interleaf
 
-go 1.26.0
+go 1.27.3
 
 require (
 	ariga.io/atlas-provider-gorm v0.6.1
+	github.com/gabriel-vasile/mimetype v1.4.16
 	github.com/google/uuid v1.6.0
 	github.com/ledongthuc/pdf v0.0.0-20261020125853-5e46805f718e
 	github.com/pdfcpu/pdfcpu v0.16.4
