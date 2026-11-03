@@ -2,6 +2,7 @@ package ingestion
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -9,29 +10,39 @@ import (
 	"github.com/gabriel-vasile/mimetype"
 )
 
-type Ingestion struct {
+var ErrExtractorAlreadyRegistered = errors.New("extractor already registered")
+
+type ExtractorRegistry struct {
 	extractors map[string]PageExtractor
 }
 
-func NewIngestion() *Ingestion {
-	return &Ingestion{
+func NewExtractorRegistry() *ExtractorRegistry {
+	return &ExtractorRegistry{
 		extractors: make(map[string]PageExtractor),
 	}
 }
 
-func (ig *Ingestion) RegisterExtractor(
+func (ig *ExtractorRegistry) RegisterExtractor(
 	pe PageExtractor,
 	contentType string,
 	contentTypes ...string,
-) {
+) error {
+	for _, ct := range append([]string{contentType}, contentTypes...) {
+		if _, exists := ig.extractors[ct]; exists {
+			return fmt.Errorf("%w: %s", ErrExtractorAlreadyRegistered, ct)
+		}
+	}
+
 	ig.extractors[contentType] = pe
 
 	for _, contentType := range contentTypes {
 		ig.extractors[contentType] = pe
 	}
+
+	return nil
 }
 
-func (ig *Ingestion) Extract(
+func (ig *ExtractorRegistry) Extract(
 	ctx context.Context,
 	file io.ReaderAt,
 	size int64,

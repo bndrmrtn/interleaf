@@ -8,6 +8,7 @@ func GetModels() []any {
 		&models.Document{},
 		&models.DocumentPage{},
 		&models.DocumentChunk{},
+		&models.DocumentChunkEmbedding{},
 		&models.Concept{},
 		&models.ConceptAlias{},
 		&models.ConceptMention{},

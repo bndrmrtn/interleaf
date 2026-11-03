@@ -1,3 +1,4 @@
-h1:eyxYM4DyHxMJ/4WPl+4PAAEBufv1Jzs2JqZTmSwM/B8=
+h1:TEtOr8Kgw6dJY3wNwae5TX+/83DWwKO1gv1pl9i0CxM=
 20261023162255_initial.sql h1:PR1kHEWUyVpe2ui9LCM4qv9Xm0C320IRKcgfyORcjas=
 20261023162402_add_hnsw_indexes.sql h1:+zvx3vKdVc1RSe8bHcNdpANZo5m1fl0R7VRQMHYh/o0=
+20261102125415_separate_document_embedding_from_chunks.sql h1:4xq+OS6esKUAYCudi1ujerxfZuns8OBv674cAKl5KjQ=

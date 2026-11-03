@@ -25,3 +25,14 @@ type PageExtractor interface {
 		size int64,
 	) ([]Page, error)
 }
+
+// Chunker splits document content into smaller text segments.
+type Chunker interface {
+	Split(ctx context.Context, content string) ([]string, error)
+}
+
+type Chunk struct {
+	PageNumber int
+	Index      int
+	Content    string
+}

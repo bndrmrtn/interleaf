@@ -15,6 +15,7 @@ atlas-install:
 	@curl -sSf https://atlasgo.sh | sh
 
 atlas-diff: atlas-image
+	@test -n "$(NAME)" || (echo "Error: NAME is required" >&2; exit 1)
 	@atlas migrate diff --env gorm $(NAME)
 
 build:

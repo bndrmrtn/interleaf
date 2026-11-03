@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bndrmrtn/interleaf/internal/chunk"
 	"github.com/bndrmrtn/interleaf/internal/extract"
 	"github.com/bndrmrtn/interleaf/internal/ingestion"
 )
@@ -34,10 +35,16 @@ func main() {
 		panic(err)
 	}
 
-	ig := ingestion.NewIngestion()
-	registerExtractors(ig)
+	er := ingestion.NewExtractorRegistry()
+	registerExtractors(er)
 
-	pages, err := ig.Extract(context.Background(), file, info.Size())
+	chunker, _ := chunk.NewMarkdownChunkerWithConfig(
+		chunk.DefaultConfig().MaxWords(100).OverlapWords(20),
+	)
+
+	p := ingestion.NewPipeline(er, chunker)
+
+	pages, chunks, err := p.Prepare(context.Background(), file, info.Size())
 	if err != nil {
 		panic(err)
 	}
@@ -54,12 +61,15 @@ func main() {
 	}
 	defer mustClose(outFile)
 
-	if err := json.NewEncoder(outFile).Encode(pages); err != nil {
+	if err := json.NewEncoder(outFile).Encode(map[string]any{
+		"Pages":  pages,
+		"Chunks": chunks,
+	}); err != nil {
 		panic(err)
 	}
 }
 
-func registerExtractors(ig *ingestion.Ingestion) {
+func registerExtractors(ig *ingestion.ExtractorRegistry) {
 	pdf := extract.NewPdfExtractor()
 	ig.RegisterExtractor(pdf, "application/pdf")
 
